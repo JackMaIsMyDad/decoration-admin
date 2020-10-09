@@ -127,3 +127,8 @@ func DoCreateUser(cr *CreateRequest) (*CreateResponse, int, error) {
 	}, http.StatusOK, nil
 
 }
+
+// this func is for geting user`s info
+func GetUserInfo() {
+
+}

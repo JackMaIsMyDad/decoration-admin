@@ -9,23 +9,16 @@ package routers
 
 import (
 	"decoration-admin/controllers"
-
 	"github.com/astaxie/beego"
 )
 
 func init() {
 	ns := beego.NewNamespace("/easy",
-		//beego.NSNamespace("/object",
-		//	beego.NSInclude(
-		//		&controllers.ObjectController{},
-		//	),
-		//),
+		beego.NSRouter("/login", &controllers.UserController{}, "post:Login"),
+		beego.NSRouter("/register", &controllers.UserController{}, "post:CreateUser"),
 		beego.NSNamespace("/user",
-			beego.NSRouter("/login", &controllers.UserController{}, "post:Login"),
-			beego.NSRouter("/register", &controllers.UserController{}, "post:CreateUser"),
-			beego.NSRouter("info", &controllers.UserController{}, "get:GetUserInfo"),
-			//beego.NSAutoRouter(&controllers.UserController{}),
-			//beego.NSInclude(&controllers.UserController{}),
+			beego.NSBefore(controllers.TokenAuth),
+			beego.NSRouter("/info", &controllers.UserController{}, "get:GetUserInfo"),
 		),
 	)
 	beego.AddNamespace(ns)

@@ -4,6 +4,7 @@ import (
 	"decoration-admin/models"
 	"encoding/json"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/context"
 	"github.com/astaxie/beego/logs"
 	"net/http"
 )
@@ -11,6 +12,12 @@ import (
 // UserController handles user related requests
 type UserController struct {
 	beego.Controller
+}
+
+type ResBody struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 func (u *UserController) unmarshalPayload(v interface{}) error {
@@ -26,11 +33,7 @@ func (u *UserController) respond(code int, message string, data ...interface{}) 
 	if len(data) > 0 {
 		d = data[0]
 	}
-	u.Data["json"] = struct {
-		Code    int         `json:"code"`
-		Message string      `json:"message"`
-		Data    interface{} `json:"data,omitempty"`
-	}{
+	u.Data["json"] = ResBody{
 		Code:    code,
 		Message: message,
 		Data:    d,
@@ -50,21 +53,14 @@ func (u *UserController) Login() {
 		u.respond(statusCode, err.Error())
 		return
 	}
-	u.Ctx.Output.Header("Authorization", lrs.Token) // set token into header
+	//u.Ctx.Output.Header("Authorization", lrs.Token) // set token into header
 	u.respond(http.StatusOK, "", lrs)
 }
 
 // Get user`s info
 func (u *UserController) GetUserInfo() {
-	token := u.Ctx.Input.Header("X-Token")
-	if token != "" {
-		_, err := models.ValidateToken(token)
-		if err != nil {
-			u.respond(http.StatusBadRequest, "验证失败！", "")
-		}
-	} else {
-		u.respond(http.StatusBadRequest, "验证失败！", "")
-	}
+	logs.Info("Get user`s info")
+
 }
 
 // CreateUser creates a user
@@ -79,4 +75,21 @@ func (u *UserController) CreateUser() {
 		return
 	}
 	u.respond(http.StatusOK, "", createUser)
+}
+
+// Valid token
+func TokenAuth(ctx *context.Context) {
+	token := ctx.Input.Header("X-Token")
+	logs.Info("Valid token", token)
+	if token != "" {
+		var err error
+		_, err = models.ValidateToken(token)
+		if err != nil {
+			ctx.Output.JSON(ResBody{Code: http.StatusBadRequest, Message: "验证失败", Data: ""}, true, true)
+		} else {
+			return
+		}
+	} else {
+		ctx.Output.JSON(ResBody{Code: http.StatusBadRequest, Message: "验证失败", Data: ""}, true, true)
+	}
 }
